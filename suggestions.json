@@ -1,0 +1,19 @@
+{
+  "_doc": "Threadstone Assist suggestions. KUN forh\u00e5ndsdefinerte handlinger. INGEN fritekst-input akseptert fra kunden \u2014 dette er bevisst sikkerhets-l\u00e5s mot prompt injection. Oppdater denne filen per kunde for \u00e5 endre forslagene de ser.",
+  "_version": "1.0.0",
+  "_actions_legend": {
+    "scroll:<element-id>": "Scroll til seksjon p\u00e5 siden",
+    "link:<url>": "\u00c5pne ekstern URL i ny fane",
+    "mailto:<email>": "\u00c5pne e-post-klient",
+    "fn:<function-name>": "Kj\u00f8r en navngitt JS-funksjon (m\u00e5 v\u00e6re whitelisted)",
+    "modal:<modal-id>": "\u00c5pne en pre-bygget info-modal"
+  },
+  "suggestions": [
+    {"icon": "\u2192", "label": "Se priser", "action": "scroll:pricing"},
+    {"icon": "?", "label": "Forskjell mellom modellene", "action": "modal:models-info"},
+    {"icon": "$", "label": "Hva er $VCO?", "action": "link:https://vvl.vauco.no"},
+    {"icon": "\u2605", "label": "Se Enterprise-fordeler", "action": "scroll:enterprise"},
+    {"icon": "\u2699", "label": "Logg inn", "action": "fn:openAuth"},
+    {"icon": "@", "label": "Kontakt Chris", "action": "mailto:chris.christiansen@vauco.no"}
+  ]
+}

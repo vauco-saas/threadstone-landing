@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Threadstone — AI som leverer. Hver gang.</title>
+<meta name="description" content="Threadstone er Vaucos SaaS-plattform for AI-assistanse. Powered by Jason · Crafted by Vauco.">
+
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<!-- Stripe (mock — bytt pk når Stripe-konto klar) -->
+<script src="https://js.stripe.com/v3/"></script>
+
+<style>
+/* ───────── ROOT ───────── */
+:root{
+  --bg: #0a0a0f;
+  --bg-2: #11131a;
+  --bg-3: #161922;
+  --border: rgba(255,255,255,0.08);
+  --border-2: rgba(255,255,255,0.14);
+  --text: #e8eaf0;
+  --text-dim: #8b909c;
+  --text-faint: #5a5f6b;
+  --accent: #7c5cff;          /* primær accent */
+  --accent-2: #00d4a8;        /* sekundær (kun bruk sparsomt) */
+  --accent-glow: rgba(124,92,255,0.25);
+  --danger: #ff5c7c;
+  --warning: #ffb547;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 40px var(--accent-glow);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter','SF Pro Display',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit;cursor:pointer}
+
+/* ───────── LAYOUT ───────── */
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* ───────── NAV ───────── */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px 0}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;gap:24px}
+.logo{font-size:18px;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:10px}
+.logo-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#0a0a0f}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--text-dim);font-size:14px;font-weight:500;transition:color 0.2s}
+.nav-links a:hover{color:var(--text);text-decoration:none}
+.nav-cta{padding:8px 18px;background:var(--accent);color:#fff;border-radius:8px;font-size:14px;font-weight:600;border:none;transition:all 0.2s}
+.nav-cta:hover{background:#6a4dee;text-decoration:none;color:#fff}
+
+/* ───────── HERO ───────── */
+.hero{padding:120px 0 80px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 60%);pointer-events:none;z-index:0}
+.hero > *{position:relative;z-index:1}
+.hero-badge{display:inline-block;padding:6px 14px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:99px;font-size:12px;color:var(--text-dim);margin-bottom:24px;font-weight:500}
+.hero-badge .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent-2);margin-right:8px;vertical-align:middle;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+h1{font-size:clamp(40px,6vw,72px);font-weight:800;letter-spacing:-0.03em;line-height:1.05;margin-bottom:24px;background:linear-gradient(180deg,#fff 0%,#a8aabc 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p.lead{font-size:20px;color:var(--text-dim);max-width:640px;margin:0 auto 40px;line-height:1.5}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:600;border:none;transition:all 0.2s;text-decoration:none}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:var(--shadow-glow)}
+.btn-primary:hover{background:#6a4dee;transform:translateY(-1px);text-decoration:none;color:#fff}
+.btn-ghost{background:var(--bg-3);color:var(--text);border:1px solid var(--border-2)}
+.btn-ghost:hover{background:#1d2030;text-decoration:none;color:var(--text)}
+
+/* ───────── SECTIONS ───────── */
+section{padding:80px 0;border-top:1px solid var(--border)}
+.section-label{font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent);font-weight:600;margin-bottom:12px}
+h2{font-size:clamp(32px,4vw,48px);font-weight:700;letter-spacing:-0.02em;margin-bottom:16px;line-height:1.1}
+h3{font-size:20px;font-weight:600;letter-spacing:-0.01em;margin-bottom:8px}
+.section-lead{color:var(--text-dim);font-size:18px;max-width:600px;margin-bottom:48px}
+
+/* ───────── FEATURES ───────── */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.feature{padding:28px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);transition:all 0.2s}
+.feature:hover{border-color:var(--border-2);transform:translateY(-2px)}
+.feature-icon{width:42px;height:42px;border-radius:10px;background:var(--bg-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:20px}
+.feature p{color:var(--text-dim);font-size:14px}
+
+/* ───────── PRICING ───────── */
+.pricing-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:40px;background:var(--bg-2);padding:6px;border-radius:12px;border:1px solid var(--border);max-width:300px;margin-left:auto;margin-right:auto}
+.tab{flex:1;padding:10px 20px;border-radius:8px;background:transparent;color:var(--text-dim);font-size:14px;font-weight:600;border:none;transition:all 0.2s}
+.tab.active{background:var(--bg-3);color:var(--text)}
+
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.price-card{padding:28px 24px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;transition:all 0.2s}
+.price-card:hover{border-color:var(--border-2)}
+.price-card.featured{border-color:var(--accent);box-shadow:var(--shadow-glow)}
+.price-card.featured::before{content:'Anbefalt';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;letter-spacing:0.05em}
+.price-name{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px}
+.price-amount{font-size:36px;font-weight:800;letter-spacing:-0.02em;line-height:1}
+.price-amount .currency{font-size:18px;color:var(--text-dim);font-weight:500;margin-right:4px}
+.price-period{font-size:13px;color:var(--text-faint);margin-top:4px;margin-bottom:20px}
+.price-features{list-style:none;margin-bottom:24px}
+.price-features li{padding:8px 0;font-size:14px;color:var(--text-dim);display:flex;align-items:center;gap:8px}
+.price-features li::before{content:'✓';color:var(--accent-2);font-weight:700}
+.price-buy{width:100%;padding:12px;background:var(--bg-3);color:var(--text);border:1px solid var(--border-2);border-radius:8px;font-size:14px;font-weight:600;transition:all 0.2s}
+.price-buy:hover{background:#1d2030}
+.price-card.featured .price-buy{background:var(--accent);border-color:var(--accent);color:#fff}
+.price-card.featured .price-buy:hover{background:#6a4dee}
+
+.model-row{display:flex;gap:8px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+.model-chip{padding:6px 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:99px;font-size:13px;color:var(--text-dim);cursor:pointer;transition:all 0.15s}
+.model-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ───────── AUTH MODAL ───────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg-2);border:1px solid var(--border-2);border-radius:var(--radius-lg);padding:40px;max-width:440px;width:100%;position:relative;box-shadow:var(--shadow)}
+.modal-close{position:absolute;top:16px;right:16px;background:transparent;border:none;color:var(--text-dim);font-size:20px;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--bg-3);color:var(--text)}
+.modal h2{font-size:24px;margin-bottom:8px}
+.modal p.modal-sub{color:var(--text-dim);font-size:14px;margin-bottom:24px}
+.google-signin-wrap{display:flex;justify-content:center;margin:20px 0}
+.toggle-row{display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg-3);border-radius:8px;margin-top:16px;font-size:13px;color:var(--text-dim)}
+.toggle{position:relative;width:38px;height:22px;background:var(--bg);border-radius:99px;cursor:pointer;border:1px solid var(--border-2);transition:all 0.2s}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--text-dim);border-radius:50%;transition:all 0.2s}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle.on::after{left:18px;background:#fff}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--text-faint);font-size:12px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-error{padding:10px 14px;background:rgba(255,92,124,0.1);border:1px solid rgba(255,92,124,0.3);border-radius:8px;color:var(--danger);font-size:13px;margin-top:12px;display:none}
+.auth-error.show{display:block}
+
+/* ───────── CHECKOUT MODAL ───────── */
+.checkout-modal{max-width:520px}
+.checkout-summary{padding:16px;background:var(--bg-3);border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.checkout-summary .label{font-size:13px;color:var(--text-dim)}
+.checkout-summary .amount{font-size:22px;font-weight:700}
+#card-element{padding:14px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:8px;margin-bottom:8px}
+.checkout-notice{padding:12px;background:rgba(255,181,71,0.08);border:1px solid rgba(255,181,71,0.25);border-radius:8px;color:var(--warning);font-size:13px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start}
+
+/* ───────── ASSIST WIDGET ───────── */
+.assist-launcher{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:24px;cursor:pointer;box-shadow:var(--shadow),var(--shadow-glow);z-index:998;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.assist-launcher:hover{transform:scale(1.05)}
+.assist-panel{position:fixed;bottom:96px;right:24px;width:360px;max-height:520px;background:var(--bg-2);border:1px solid var(--border-2);border-radius:var(--radius-lg);box-shadow:var(--shadow);z-index:999;display:none;flex-direction:column;overflow:hidden}
+.assist-panel.show{display:flex}
+.assist-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.assist-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0a0a0f}
+.assist-title{font-size:14px;font-weight:600}
+.assist-title small{display:block;font-size:11px;color:var(--text-faint);font-weight:400;margin-top:1px}
+.assist-body{flex:1;overflow-y:auto;padding:16px}
+.assist-msg{padding:12px 14px;background:var(--bg-3);border-radius:12px;font-size:13px;color:var(--text-dim);margin-bottom:12px;line-height:1.5}
+.assist-suggestions{display:flex;flex-direction:column;gap:8px}
+.assist-chip{padding:10px 14px;background:var(--bg);border:1px solid var(--border-2);border-radius:10px;font-size:13px;color:var(--text);text-align:left;transition:all 0.15s;cursor:pointer}
+.assist-chip:hover{border-color:var(--accent);background:var(--bg-3)}
+.assist-chip .chip-icon{margin-right:8px;color:var(--accent)}
+.assist-footer{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-faint);text-align:center}
+
+/* ───────── FOOTER ───────── */
+footer{padding:60px 0 40px;border-top:1px solid var(--border);margin-top:80px}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand p{color:var(--text-dim);font-size:13px;margin-top:12px;max-width:280px}
+.footer-col h4{font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:12px}
+.footer-col ul{list-style:none}
+.footer-col ul li{margin-bottom:8px}
+.footer-col a{color:var(--text-dim);font-size:13px}
+.footer-col a:hover{color:var(--text)}
+.footer-bottom{padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-credit{font-size:12px;color:var(--text-dim)}
+.footer-credit strong{color:var(--text);font-weight:600}
+.footer-legal{font-size:11px;color:var(--text-faint)}
+
+@media (max-width:768px){
+  .footer-grid{grid-template-columns:1fr 1fr;gap:24px}
+  .nav-links{display:none}
+  .assist-panel{width:calc(100vw - 32px);right:16px;bottom:88px}
+  .assist-launcher{right:16px;bottom:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<nav>
+  <div class="wrap nav-inner">
+    <div class="logo">
+      <div class="logo-mark">T</div>
+      Threadstone
+    </div>
+    <div class="nav-links">
+      <a href="#features">Funksjoner</a>
+      <a href="#pricing">Priser</a>
+      <a href="#enterprise">Enterprise</a>
+      <button class="nav-cta" onclick="openAuth()">Logg inn</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<header class="hero">
+  <div class="wrap">
+    <span class="hero-badge"><span class="dot"></span>Drives av Jason · Vauco AS</span>
+    <h1>AI som leverer.<br>Hver gang.</h1>
+    <p class="lead">Threadstone gir deg en privat AI-arbeidsflate som forstår konteksten din. Bygd for nordiske bedrifter, hostet trygt, levert med karakter.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary" onclick="scrollTo({top:document.getElementById('pricing').offsetTop-60,behavior:'smooth'})">Se priser →</button>
+      <button class="btn btn-ghost" onclick="openAuth()">Logg inn</button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ FEATURES ═══════════════════ -->
+<section id="features">
+  <div class="wrap">
+    <div class="section-label">Hva du får</div>
+    <h2>En arbeidsflate som husker.</h2>
+    <p class="section-lead">Ikke en chatbot. Et instrument tilpasset din kontekst, dine prosjekter, dine vaner.</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Tre modeller, ett grensesnitt</h3>
+        <p>ChatGPT, Claude og Gemini i samme app. Velg etter oppgave, ikke vendor.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <h3>Privat instans</h3>
+        <p>Din egen Threadstone-lisens, din egen URL, dine egne instrukser. Ingen data deles.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎨</div>
+        <h3>6 temaer + tilpasning</h3>
+        <p>Fra rolig kontorlys til hacker-grønt. Du velger stemningen.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📈</div>
+        <h3>Skalerer med deg</h3>
+        <p>Start consumer, oppgrader til enterprise. Migrering tar minutter, ikke uker.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🇳🇴</div>
+        <h3>Norsk forankring</h3>
+        <p>Bygd i Oslo. Vauco AS står juridisk og økonomisk bak hvert eneste artefakt.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🤝</div>
+        <h3>Threadstone Assist</h3>
+        <p>Innebygd guide som hjelper deg bruke appen bedre — ikke gjør jobben for deg.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PRICING ═══════════════════ -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="section-label">Priser</div>
+    <h2>Velg din modell, velg din varighet.</h2>
+    <p class="section-lead">Hele tall, ingen 99-priser. Ingen gratis-tier. Ekte verdi fra dag én.</p>
+
+    <div class="pricing-tabs">
+      <button class="tab active" onclick="setTier('consumer')">Consumer</button>
+      <button class="tab" onclick="setTier('enterprise')">Enterprise</button>
+    </div>
+
+    <div class="model-row" id="model-row">
+      <button class="model-chip active" data-model="gemini" onclick="setModel('gemini')">Gemini</button>
+      <button class="model-chip" data-model="chatgpt" onclick="setModel('chatgpt')">ChatGPT</button>
+      <button class="model-chip" data-model="claude" onclick="setModel('claude')">Claude</button>
+      <button class="model-chip" data-model="bundle" onclick="setModel('bundle')">Bundle (alle 3)</button>
+    </div>
+
+    <div class="pricing-grid" id="pricing-grid">
+      <!-- Fylles av JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ ENTERPRISE BANNER ═══════════════════ -->
+<section id="enterprise">
+  <div class="wrap">
+    <div style="padding:48px;background:linear-gradient(135deg,var(--bg-2),var(--bg-3));border:1px solid var(--border-2);border-radius:var(--radius-lg);text-align:center">
+      <div class="section-label">Enterprise</div>
+      <h2 style="margin-bottom:16px">Voice. Kvote. Kontroll.</h2>
+      <p style="color:var(--text-dim);max-width:560px;margin:0 auto 24px;font-size:16px">Talekommando, høyere kvote-grenser, dedikert support, og tilgang til Vauco Value Ledger ($VCO) for skalerbar drift.</p>
+      <a href="mailto:chris.christiansen@vauco.no?subject=Threadstone%20Enterprise" class="btn btn-primary">Kontakt oss</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ AUTH MODAL ═══════════════════ -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuth()">×</button>
+    <h2>Logg inn på Threadstone</h2>
+    <p class="modal-sub">Sikker innlogging med Google. Din konto, din kontekst.</p>
+
+    <div class="google-signin-wrap">
+      <div id="g_id_signin"></div>
+    </div>
+
+    <div class="auth-divider">eller</div>
+
+    <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="demoLogin()">Fortsett som demo (kun @vauco.no)</button>
+
+    <div class="auth-error" id="authError"></div>
+
+    <div class="toggle-row">
+      <div class="toggle" id="openModeToggle" onclick="toggleOpenMode()"></div>
+      <div>
+        <strong style="color:var(--text)">Åpen modus</strong> · slipp inn brukere utenfor @vauco.no
+        <div style="font-size:11px;margin-top:2px;color:var(--text-faint)">Krever Chris' godkjenning ved fakturering</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ CHECKOUT MODAL ═══════════════════ -->
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal checkout-modal">
+    <button class="modal-close" onclick="closeCheckout()">×</button>
+    <h2>Bekreft kjøp</h2>
+    <p class="modal-sub" id="checkout-desc">Threadstone Consumer 30 dager · Gemini</p>
+
+    <div class="checkout-summary">
+      <div>
+        <div class="label">Totalt</div>
+        <div id="checkout-plan-name" style="font-size:13px;font-weight:500;margin-top:2px">—</div>
+      </div>
+      <div class="amount"><span id="checkout-amount">0</span> kr</div>
+    </div>
+
+    <div class="checkout-notice">
+      <span>ℹ️</span>
+      <span><strong>Mock-modus:</strong> Stripe-kontoen aktiveres snart. Klikk "Bestill" og du får e-post fra Chris for å bekrefte manuelt.</span>
+    </div>
+
+    <div id="card-element">
+      <div style="color:var(--text-faint);font-size:13px;text-align:center;padding:8px">Kort-felt (deaktivert i mock-modus)</div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px" onclick="submitCheckout()">Bestill og motta bekreftelse</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ ASSIST WIDGET ═══════════════════ -->
+<button class="assist-launcher" onclick="toggleAssist()" title="Threadstone Assist">💬</button>
+<div class="assist-panel" id="assistPanel">
+  <div class="assist-header">
+    <div class="assist-avatar">T</div>
+    <div class="assist-title">Threadstone Assist <small>Veileder, ikke gjør jobben</small></div>
+  </div>
+  <div class="assist-body" id="assistBody">
+    <div class="assist-msg">Hei. Jeg er Threadstone Assist. Jeg hjelper deg finne fram — ikke skriv noe, bare klikk forslag.</div>
+    <div class="assist-suggestions" id="assistSuggestions">
+      <!-- Fylles av JS fra suggestions.json -->
+    </div>
+  </div>
+  <div class="assist-footer">Sikret. Ingen tekst-input. Ingen kode inn.</div>
+</div>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-mark">T</div>
+          Threadstone
+        </div>
+        <p>AI som leverer. En Vauco-tjeneste fra Oslo, bygd for nordiske bedrifter som krever kvalitet.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Produkt</h4>
+        <ul>
+          <li><a href="#features">Funksjoner</a></li>
+          <li><a href="#pricing">Priser</a></li>
+          <li><a href="#enterprise">Enterprise</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Vauco</h4>
+        <ul>
+          <li><a href="https://vauco.no">Vauco.no</a></li>
+          <li><a href="https://vco.vauco.no">$VCO</a></li>
+          <li><a href="https://vvl.vauco.no">VVL</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Kontakt</h4>
+        <ul>
+          <li><a href="mailto:chris.christiansen@vauco.no">E-post</a></li>
+          <li><a href="#">Personvern</a></li>
+          <li><a href="#">Vilkår</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-credit">
+        <strong>Powered by Jason · Crafted by Vauco</strong><br>
+        <span class="footer-legal">Vauco AS · Org.nr 935 989 779 · Oslo, Norge</span>
+      </div>
+      <div class="footer-legal">© 2026 Vauco AS. Alle rettigheter forbeholdt.</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════ JS ═══════════════════ -->
+<script>
+// ──────────────────────────────────────────────────
+// CONFIG
+// ──────────────────────────────────────────────────
+const CONFIG = {
+  GOOGLE_CLIENT_ID: '357036551735-ka7t2fv9ue2jp01bs826hpdctlvispuo.apps.googleusercontent.com',
+  STRIPE_PK: 'pk_test_MOCK_REPLACE_WHEN_READY',
+  ALLOWED_DOMAIN: 'vauco.no',  // hvilken email-domene som slipper inn (lock-mode)
+  DEMO_MODE: true,             // mock-checkout i stedet for ekte Stripe
+  POWERED_BY: 'Powered by Jason · Crafted by Vauco',
+  LEGAL: 'Vauco AS · Org.nr 935 989 779'
+};
+
+// ──────────────────────────────────────────────────
+// PRICING DATA
+// ──────────────────────────────────────────────────
+const PRICING = {
+  consumer: {
+    gemini:  [{d:7,p:300},{d:14,p:500},{d:30,p:900,featured:true},{d:90,p:2400}],
+    chatgpt: [{d:7,p:400},{d:14,p:700},{d:30,p:1300,featured:true},{d:90,p:3400}],
+    claude:  [{d:7,p:550},{d:14,p:950},{d:30,p:1700,featured:true},{d:90,p:4400}],
+    bundle:  [{d:7,p:700},{d:14,p:1200},{d:30,p:2200,featured:true},{d:90,p:5600}]
+  },
+  enterprise: {
+    gemini:  [{d:'kvartal',p:8900,from:true}],
+    chatgpt: [{d:'kvartal',p:12900,from:true}],
+    claude:  [{d:'kvartal',p:16900,from:true}],
+    bundle:  [{d:'kvartal',p:19900,from:true}]
+  }
+};
+
+let currentTier = 'consumer';
+let currentModel = 'gemini';
+
+// ──────────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────────
+const STATE = {
+  user: null,
+  openMode: localStorage.getItem('threadstone.openMode') === 'true'
+};
+
+// ──────────────────────────────────────────────────
+// PRICING RENDER
+// ──────────────────────────────────────────────────
+function renderPricing(){
+  const grid = document.getElementById('pricing-grid');
+  const tier = PRICING[currentTier][currentModel];
+  grid.innerHTML = tier.map(plan => {
+    const days = plan.d === 'kvartal' ? 'per kvartal' : `${plan.d} dager`;
+    const fromLabel = plan.from ? 'fra ' : '';
+    return `
+      <div class="price-card ${plan.featured?'featured':''}">
+        <div class="price-name">${currentModel === 'bundle' ? 'Bundle' : currentModel.charAt(0).toUpperCase()+currentModel.slice(1)}</div>
+        <div class="price-amount"><span class="currency">${fromLabel}</span>${plan.p.toLocaleString('nb-NO')} <span class="currency">kr</span></div>
+        <div class="price-period">${days}</div>
+        <ul class="price-features">
+          ${currentTier==='enterprise' ? `
+            <li>Voice-kommando</li>
+            <li>Høyere kvote</li>
+            <li>Dedikert support</li>
+            <li>$VCO-integrering</li>
+          ` : `
+            <li>Privat instans</li>
+            <li>${plan.d} dagers tilgang</li>
+            <li>6 temaer</li>
+            <li>Threadstone Assist</li>
+          `}
+        </ul>
+        <button class="price-buy" onclick="buy('${currentTier}','${currentModel}',${plan.p===8900||plan.p===12900||plan.p===16900||plan.p===19900?`'${plan.d}'`:plan.d},${plan.p})">
+          ${currentTier==='enterprise' ? 'Kontakt salg' : 'Kjøp nå'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function setTier(tier){
+  currentTier = tier;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderPricing();
+}
+function setModel(model){
+  currentModel = model;
+  document.querySelectorAll('.model-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`[data-model="${model}"]`).classList.add('active');
+  renderPricing();
+}
+
+// ──────────────────────────────────────────────────
+// AUTH
+// ──────────────────────────────────────────────────
+function openAuth(){
+  document.getElementById('authModal').classList.add('show');
+  renderOpenModeToggle();
+}
+function closeAuth(){document.getElementById('authModal').classList.remove('show')}
+
+function renderOpenModeToggle(){
+  const t = document.getElementById('openModeToggle');
+  if(STATE.openMode) t.classList.add('on'); else t.classList.remove('on');
+}
+function toggleOpenMode(){
+  STATE.openMode = !STATE.openMode;
+  localStorage.setItem('threadstone.openMode', STATE.openMode);
+  renderOpenModeToggle();
+}
+
+function showAuthError(msg){
+  const e = document.getElementById('authError');
+  e.textContent = msg;
+  e.classList.add('show');
+  setTimeout(()=>e.classList.remove('show'),5000);
+}
+
+// Google Sign-In callback
+window.handleGoogleSignIn = function(response){
+  try{
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = payload.email;
+    const name = payload.name;
+
+    if(!STATE.openMode && !email.endsWith('@'+CONFIG.ALLOWED_DOMAIN)){
+      showAuthError(`Kun @${CONFIG.ALLOWED_DOMAIN}-kontoer er tillatt. Slå på Åpen modus for å logge inn med andre Google-kontoer.`);
+      return;
+    }
+
+    STATE.user = {email, name, picture: payload.picture};
+    localStorage.setItem('threadstone.user', JSON.stringify(STATE.user));
+    closeAuth();
+    alert(`Velkommen, ${name}. Innlogging fullført.`);
+    refreshNavAuth();
+  }catch(err){
+    showAuthError('Innlogging feilet. Prøv igjen.');
+    console.error(err);
+  }
+};
+
+function demoLogin(){
+  if(!STATE.openMode){
+    STATE.user = {email:'demo@vauco.no',name:'Vauco Demo'};
+  }else{
+    STATE.user = {email:'demo@open.test',name:'Åpen Demo'};
+  }
+  localStorage.setItem('threadstone.user', JSON.stringify(STATE.user));
+  closeAuth();
+  alert(`Velkommen, ${STATE.user.name}. Demo-innlogging aktiv.`);
+  refreshNavAuth();
+}
+
+function refreshNavAuth(){
+  const btn = document.querySelector('.nav-cta');
+  if(STATE.user){
+    btn.textContent = STATE.user.name.split(' ')[0];
+    btn.onclick = ()=>{ if(confirm('Logg ut?')){ STATE.user=null; localStorage.removeItem('threadstone.user'); btn.textContent='Logg inn'; btn.onclick=openAuth; }};
+  }
+}
+
+// ──────────────────────────────────────────────────
+// CHECKOUT (mock)
+// ──────────────────────────────────────────────────
+function buy(tier, model, duration, price){
+  if(!STATE.user){ openAuth(); showAuthError('Logg inn først for å bestille.'); return; }
+  if(tier === 'enterprise'){
+    window.location.href = `mailto:chris.christiansen@vauco.no?subject=Threadstone Enterprise — ${model} ${duration}&body=Jeg ønsker tilbud på Threadstone Enterprise ${model.toUpperCase()} (${duration}). Pris fra ${price} kr.`;
+    return;
+  }
+  const days = typeof duration === 'number' ? `${duration} dager` : duration;
+  document.getElementById('checkout-plan-name').textContent = `${tier.charAt(0).toUpperCase()+tier.slice(1)} ${model.toUpperCase()} · ${days}`;
+  document.getElementById('checkout-desc').textContent = `Threadstone ${tier} ${days} · ${model.charAt(0).toUpperCase()+model.slice(1)}`;
+  document.getElementById('checkout-amount').textContent = price.toLocaleString('nb-NO');
+  document.getElementById('checkoutModal').classList.add('show');
+  window._pendingOrder = {tier,model,duration,price,user:STATE.user.email};
+}
+function closeCheckout(){document.getElementById('checkoutModal').classList.remove('show')}
+
+function submitCheckout(){
+  const order = window._pendingOrder;
+  if(!order) return;
+  // Mock-modus — send mail til Chris
+  const subject = encodeURIComponent(`Threadstone-bestilling — ${order.tier}/${order.model}`);
+  const body = encodeURIComponent(`Ny bestilling:
+
+Kunde: ${order.user}
+Plan: ${order.tier} ${order.model}
+Varighet: ${order.duration}
+Pris: ${order.price} kr
+
+Bekreft og generér lisens.
+
+— Threadstone (mock-mode)
+${CONFIG.POWERED_BY}
+${CONFIG.LEGAL}`);
+  window.location.href = `mailto:chris.christiansen@vauco.no?subject=${subject}&body=${body}`;
+  closeCheckout();
+  setTimeout(()=>alert('Bestilling sendt. Du får svar fra Chris innen 24 timer.'),300);
+}
+
+// ──────────────────────────────────────────────────
+// ASSIST WIDGET (static suggestions, no free text)
+// ──────────────────────────────────────────────────
+function toggleAssist(){
+  const p = document.getElementById('assistPanel');
+  p.classList.toggle('show');
+  if(p.classList.contains('show')) loadAssistSuggestions();
+}
+
+// Default suggestions hvis suggestions.json ikke kan lastes
+const DEFAULT_SUGGESTIONS = [
+  {icon:'→', label:'Se priser', action:'scroll:pricing'},
+  {icon:'?', label:'Forskjell mellom modellene', action:'modal:models-info'},
+  {icon:'$', label:'Hva er $VCO?', action:'link:https://vvl.vauco.no'},
+  {icon:'@', label:'Kontakt Chris', action:'mailto:chris.christiansen@vauco.no'},
+  {icon:'⚙', label:'Logg inn', action:'fn:openAuth'},
+  {icon:'★', label:'Se Enterprise', action:'scroll:enterprise'}
+];
+
+async function loadAssistSuggestions(){
+  let suggestions = DEFAULT_SUGGESTIONS;
+  try{
+    const r = await fetch('./suggestions.json');
+    if(r.ok){
+      const data = await r.json();
+      suggestions = data.suggestions || DEFAULT_SUGGESTIONS;
+    }
+  }catch(e){/* bruk default */}
+  renderSuggestions(suggestions);
+}
+
+function renderSuggestions(list){
+  const wrap = document.getElementById('assistSuggestions');
+  wrap.innerHTML = list.map(s => `<button class="assist-chip" onclick="runAssist('${s.action}')"><span class="chip-icon">${s.icon}</span>${s.label}</button>`).join('');
+}
+
+function runAssist(action){
+  const [type, val] = action.split(':');
+  switch(type){
+    case 'scroll':
+      const el = document.getElementById(val);
+      if(el) window.scrollTo({top:el.offsetTop-60,behavior:'smooth'});
+      break;
+    case 'link':
+      window.open(val,'_blank');
+      break;
+    case 'mailto':
+      window.location.href = 'mailto:' + val;
+      break;
+    case 'fn':
+      if(typeof window[val] === 'function') window[val]();
+      break;
+    case 'modal':
+      alert('Info-modal kommer i neste versjon.');
+      break;
+  }
+  toggleAssist();
+}
+
+// ──────────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderPricing();
+
+  // Restore user
+  const saved = localStorage.getItem('threadstone.user');
+  if(saved){ STATE.user = JSON.parse(saved); refreshNavAuth(); }
+
+  // Init Google Sign-In
+  if(window.google && window.google.accounts){
+    initGoogleSignIn();
+  }else{
+    // Vent til script lastes
+    const check = setInterval(()=>{
+      if(window.google && window.google.accounts){
+        clearInterval(check);
+        initGoogleSignIn();
+      }
+    }, 200);
+  }
+});
+
+function initGoogleSignIn(){
+  google.accounts.id.initialize({
+    client_id: CONFIG.GOOGLE_CLIENT_ID,
+    callback: handleGoogleSignIn,
+    auto_select: false,
+    cancel_on_tap_outside: true
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('g_id_signin'),
+    {theme:'filled_black', size:'large', text:'continue_with', shape:'rectangular', logo_alignment:'left', width: 320}
+  );
+}
+</script>
+
+</body>
+</html>
