@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Threadstone — AI som leverer. Hver gang.</title>
-<meta name="description" content="Threadstone er Vaucos SaaS-plattform for AI-assistanse. Powered by Jason · Crafted by Vauco.">
+<meta name="description" content="Threadstone er Vaucos SaaS-plattform for AI-assistanse. Under utvikling i lukket pilot for interne brukere.">
 
 <!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -119,11 +119,6 @@ h3{font-size:20px;font-weight:600;letter-spacing:-0.01em;margin-bottom:8px}
 .modal h2{font-size:24px;margin-bottom:8px}
 .modal p.modal-sub{color:var(--text-dim);font-size:14px;margin-bottom:24px}
 .google-signin-wrap{display:flex;justify-content:center;margin:20px 0}
-.toggle-row{display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg-3);border-radius:8px;margin-top:16px;font-size:13px;color:var(--text-dim)}
-.toggle{position:relative;width:38px;height:22px;background:var(--bg);border-radius:99px;cursor:pointer;border:1px solid var(--border-2);transition:all 0.2s}
-.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--text-dim);border-radius:50%;transition:all 0.2s}
-.toggle.on{background:var(--accent);border-color:var(--accent)}
-.toggle.on::after{left:18px;background:#fff}
 .auth-divider{display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--text-faint);font-size:12px}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .auth-error{padding:10px 14px;background:rgba(255,92,124,0.1);border:1px solid rgba(255,92,124,0.3);border-radius:8px;color:var(--danger);font-size:13px;margin-top:12px;display:none}
@@ -197,9 +192,9 @@ footer{padding:60px 0 40px;border-top:1px solid var(--border);margin-top:80px}
 <!-- ═══════════════════ HERO ═══════════════════ -->
 <header class="hero">
   <div class="wrap">
-    <span class="hero-badge"><span class="dot"></span>Drives av Jason · Vauco AS</span>
+    <span class="hero-badge"><span class="dot"></span>Under utvikling · Lukket pilot for interne brukere</span>
     <h1>AI som leverer.<br>Hver gang.</h1>
-    <p class="lead">Threadstone gir deg en privat AI-arbeidsflate som forstår konteksten din. Bygd for nordiske bedrifter, hostet trygt, levert med karakter.</p>
+    <p class="lead">Threadstone gir deg en privat AI-arbeidsflate som forstår konteksten din. Tjenesten er i lukket pilot, og er foreløpig kun tilgjengelig for interne Vauco-kontoer.</p>
     <div class="hero-cta">
       <button class="btn btn-primary" onclick="scrollTo({top:document.getElementById('pricing').offsetTop-60,behavior:'smooth'})">Se priser →</button>
       <button class="btn btn-ghost" onclick="openAuth()">Logg inn</button>
@@ -290,25 +285,13 @@ footer{padding:60px 0 40px;border-top:1px solid var(--border);margin-top:80px}
   <div class="modal">
     <button class="modal-close" onclick="closeAuth()">×</button>
     <h2>Logg inn på Threadstone</h2>
-    <p class="modal-sub">Sikker innlogging med Google. Din konto, din kontekst.</p>
+    <p class="modal-sub">Threadstone er i lukket pilot. Foreløpig er det kun brukere med @vauco.no-konto som kan logge inn.</p>
 
     <div class="google-signin-wrap">
       <div id="g_id_signin"></div>
     </div>
 
-    <div class="auth-divider">eller</div>
-
-    <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="demoLogin()">Fortsett som demo (kun @vauco.no)</button>
-
     <div class="auth-error" id="authError"></div>
-
-    <div class="toggle-row">
-      <div class="toggle" id="openModeToggle" onclick="toggleOpenMode()"></div>
-      <div>
-        <strong style="color:var(--text)">Åpen modus</strong> · slipp inn brukere utenfor @vauco.no
-        <div style="font-size:11px;margin-top:2px;color:var(--text-faint)">Krever Chris' godkjenning ved fakturering</div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -410,8 +393,8 @@ footer{padding:60px 0 40px;border-top:1px solid var(--border);margin-top:80px}
 const CONFIG = {
   GOOGLE_CLIENT_ID: '357036551735-ka7t2fv9ue2jp01bs826hpdctlvispuo.apps.googleusercontent.com',
   STRIPE_PK: 'pk_test_MOCK_REPLACE_WHEN_READY',
-  ALLOWED_DOMAIN: 'vauco.no',  // hvilken email-domene som slipper inn (lock-mode)
-  DEMO_MODE: true,             // mock-checkout i stedet for ekte Stripe
+  ALLOWED_DOMAIN: 'vauco.no',  // kun interne Vauco-kontoer i pilot
+  DEMO_MODE: true,
   POWERED_BY: 'Powered by Jason · Crafted by Vauco',
   LEGAL: 'Vauco AS · Org.nr 935 989 779'
 };
@@ -441,8 +424,7 @@ let currentModel = 'gemini';
 // STATE
 // ──────────────────────────────────────────────────
 const STATE = {
-  user: null,
-  openMode: localStorage.getItem('threadstone.openMode') === 'true'
+  user: null
 };
 
 // ──────────────────────────────────────────────────
@@ -498,25 +480,13 @@ function setModel(model){
 // ──────────────────────────────────────────────────
 function openAuth(){
   document.getElementById('authModal').classList.add('show');
-  renderOpenModeToggle();
 }
 function closeAuth(){document.getElementById('authModal').classList.remove('show')}
-
-function renderOpenModeToggle(){
-  const t = document.getElementById('openModeToggle');
-  if(STATE.openMode) t.classList.add('on'); else t.classList.remove('on');
-}
-function toggleOpenMode(){
-  STATE.openMode = !STATE.openMode;
-  localStorage.setItem('threadstone.openMode', STATE.openMode);
-  renderOpenModeToggle();
-}
 
 function showAuthError(msg){
   const e = document.getElementById('authError');
   e.textContent = msg;
   e.classList.add('show');
-  setTimeout(()=>e.classList.remove('show'),5000);
 }
 
 // Google Sign-In callback
@@ -526,33 +496,20 @@ window.handleGoogleSignIn = function(response){
     const email = payload.email;
     const name = payload.name;
 
-    if(!STATE.openMode && !email.endsWith('@'+CONFIG.ALLOWED_DOMAIN)){
-      showAuthError(`Kun @${CONFIG.ALLOWED_DOMAIN}-kontoer er tillatt. Slå på Åpen modus for å logge inn med andre Google-kontoer.`);
+    if(!email.endsWith('@'+CONFIG.ALLOWED_DOMAIN)){
+      showAuthError('Threadstone er i lukket pilot. Bare @vauco.no-kontoer kan logge inn akkurat nå.');
       return;
     }
 
     STATE.user = {email, name, picture: payload.picture};
     localStorage.setItem('threadstone.user', JSON.stringify(STATE.user));
     closeAuth();
-    alert(`Velkommen, ${name}. Innlogging fullført.`);
     refreshNavAuth();
   }catch(err){
     showAuthError('Innlogging feilet. Prøv igjen.');
     console.error(err);
   }
 };
-
-function demoLogin(){
-  if(!STATE.openMode){
-    STATE.user = {email:'demo@vauco.no',name:'Vauco Demo'};
-  }else{
-    STATE.user = {email:'demo@open.test',name:'Åpen Demo'};
-  }
-  localStorage.setItem('threadstone.user', JSON.stringify(STATE.user));
-  closeAuth();
-  alert(`Velkommen, ${STATE.user.name}. Demo-innlogging aktiv.`);
-  refreshNavAuth();
-}
 
 function refreshNavAuth(){
   const btn = document.querySelector('.nav-cta');
@@ -566,7 +523,7 @@ function refreshNavAuth(){
 // CHECKOUT (mock)
 // ──────────────────────────────────────────────────
 function buy(tier, model, duration, price){
-  if(!STATE.user){ openAuth(); showAuthError('Logg inn først for å bestille.'); return; }
+  if(!STATE.user){ openAuth(); showAuthError('Logg inn med @vauco.no først for å bestille.'); return; }
   if(tier === 'enterprise'){
     window.location.href = `mailto:chris.christiansen@vauco.no?subject=Threadstone Enterprise — ${model} ${duration}&body=Jeg ønsker tilbud på Threadstone Enterprise ${model.toUpperCase()} (${duration}). Pris fra ${price} kr.`;
     return;
@@ -583,23 +540,10 @@ function closeCheckout(){document.getElementById('checkoutModal').classList.remo
 function submitCheckout(){
   const order = window._pendingOrder;
   if(!order) return;
-  // Mock-modus — send mail til Chris
   const subject = encodeURIComponent(`Threadstone-bestilling — ${order.tier}/${order.model}`);
-  const body = encodeURIComponent(`Ny bestilling:
-
-Kunde: ${order.user}
-Plan: ${order.tier} ${order.model}
-Varighet: ${order.duration}
-Pris: ${order.price} kr
-
-Bekreft og generér lisens.
-
-— Threadstone (mock-mode)
-${CONFIG.POWERED_BY}
-${CONFIG.LEGAL}`);
+  const body = encodeURIComponent(`Ny bestilling:\n\nKunde: ${order.user}\nPlan: ${order.tier} ${order.model}\nVarighet: ${order.duration}\nPris: ${order.price} kr\n\nBekreft og generér lisens.\n\n— Threadstone (mock-mode)\n${CONFIG.POWERED_BY}\n${CONFIG.LEGAL}`);
   window.location.href = `mailto:chris.christiansen@vauco.no?subject=${subject}&body=${body}`;
   closeCheckout();
-  setTimeout(()=>alert('Bestilling sendt. Du får svar fra Chris innen 24 timer.'),300);
 }
 
 // ──────────────────────────────────────────────────
@@ -616,7 +560,7 @@ const DEFAULT_SUGGESTIONS = [
   {icon:'→', label:'Se priser', action:'scroll:pricing'},
   {icon:'?', label:'Forskjell mellom modellene', action:'modal:models-info'},
   {icon:'$', label:'Hva er $VCO?', action:'link:https://vvl.vauco.no'},
-  {icon:'@', label:'Kontakt Chris', action:'mailto:chris.christiansen@vauco.no'},
+  {icon:'@', label:'Kontakt oss', action:'mailto:chris.christiansen@vauco.no'},
   {icon:'⚙', label:'Logg inn', action:'fn:openAuth'},
   {icon:'★', label:'Se Enterprise', action:'scroll:enterprise'}
 ];
@@ -675,7 +619,6 @@ window.addEventListener('DOMContentLoaded', () => {
   if(window.google && window.google.accounts){
     initGoogleSignIn();
   }else{
-    // Vent til script lastes
     const check = setInterval(()=>{
       if(window.google && window.google.accounts){
         clearInterval(check);
